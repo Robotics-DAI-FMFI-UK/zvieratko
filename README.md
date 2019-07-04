@@ -39,18 +39,22 @@ If you make any changes in the java code, recompile with compile.bat.
 Connections:
 
 Arduino: 
-  pin D2 -> wake-up buzzer
+
+* pin D2 -> wake-up buzzer
+
 ESP units:
-  pin D1 -> emit sound
-  pin D2 -> emit alarm
-  pin D3 -> shoot camera
+
+* pin D1 -> emit sound
+* pin D2 -> emit alarm
+* pin D3 -> shoot camera
   
-  pin D6 <- PIR sensor signal 1
-  pin D7 <- PIR sensor signal 2
+* pin D6 <- PIR sensor signal 1
+* pin D7 <- PIR sensor signal 2
   
   optional: 
-    D5 -> piezo for debugging sounds
-    D4 -> servo        
+
+*   D5 -> piezo for debugging sounds
+*   D4 -> servo        
  
 The setup assumes a fixed IP address of the PC.
 It has to be configured directly in the esp.ino
