@@ -114,6 +114,7 @@ public class ZvieratkoServer implements Runnable {
 					wb.flip();
 					c.write(wb);
 				}
+				else toRemove.add(c);
 			}
 		} catch (Exception e) {
 			System.out.println("Warning: Could not talk to remote ESP: " + e);
