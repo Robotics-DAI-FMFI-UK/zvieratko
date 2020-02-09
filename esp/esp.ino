@@ -2,11 +2,12 @@
 #include <Servo.h>
 
 // Replace these with your WiFi network settings
-const char* ssid = "martes2"; //replace this with your WiFi network name
+const char* ssid = "martes1"; //replace this with your WiFi network name
 const char* password = "27272727"; //replace this with your WiFi network password
 
 int a;
 int last_value6, last_value7;
+unsigned long  last_ping;
 
 WiFiClient client;
 char *server_ip = "192.168.188.100";
@@ -57,6 +58,7 @@ void setup()
     
   last_value6 = digitalRead(D6);
   last_value7 = digitalRead(D7);
+  last_ping = millis();
 }
 
 void connect_wifi()
@@ -157,7 +159,7 @@ int read_and_process_packet(WiFiClient *client)
               break;
     case 'D': //sound
               digitalWrite(D1, HIGH); delay(400); digitalWrite(D1, LOW); 
-              break;  
+              break;
     case 'C': //camera
               digitalWrite(D3, HIGH); delay(400); digitalWrite(D3, LOW); 
               break;
@@ -165,7 +167,10 @@ int read_and_process_packet(WiFiClient *client)
               digitalWrite(D1, HIGH); delay(400); digitalWrite(D1, LOW);   
               delay(1600);
               digitalWrite(D3, HIGH); delay(400); digitalWrite(D3, LOW); 
-              break;                
+              break;
+    case 'G': //ping
+              last_ping = millis();
+              break;
     case '-': return 0;
   }
   return 1;
@@ -203,6 +208,8 @@ void loop()
         }
         if (!read_and_process_packet(&client)) break;
         delay(1);
+        if (millis() - last_ping > 5000L) 
+          if (millis() > 15000L) break;
       }
       client.stop();
   }

@@ -8,26 +8,55 @@ import java.util.*;
 
 public class ZvieratkoServer implements Runnable {
 
-    final static int port = 12345;
+	final static int port = 12345;
 
 	final static int SEE_ANIMAL = 65;      // 'A'
-    final static byte CAMERA_SHOT = 67;  // 'C'
-    final static byte SOUND_SIGNAL = 68;      // 'D'
+	final static byte CAMERA_SHOT = 67;  // 'C'
+	final static byte SOUND_SIGNAL = 68;      // 'D'
 	final static byte SOUND_AND_CAMERA_SHOT = 69;  // 'E'
 	final static byte ALARM_SIGNAL = 70;  // 'F'
+        final static byte PING_SIGNAL = 71;  // 'G'
 	
+        final static byte COMMUNICATING_THREAD = 1;
+        final static byte PINGING_THREAD = 2;
+
 	private Zvieratko zvieratko;
 	
 	private ArrayList<SocketChannel> connected = null;
+
+        private volatile boolean communicating_thread_runs = false;
+        private volatile int type_of_thread;
     
 	public ZvieratkoServer(Zvieratko z)
 	{
 		zvieratko = z;
 		connected = new ArrayList<>();
+                type_of_thread = COMMUNICATING_THREAD;
+		new Thread(this).start();
+                while (!communicating_thread_runs);
+                type_of_thread = PINGING_THREAD;
 		new Thread(this).start();
 	}
    
     public void run()
+    {
+       if (type_of_thread == COMMUNICATING_THREAD) communicating_thread_run();
+       else pinging_thread_run();
+    }
+
+    void pinging_thread_run()
+    {
+       try { 
+         Thread.sleep(5000); 
+         while (communicating_thread_runs)
+         {
+            emit(PING_SIGNAL);
+            Thread.sleep(2000);
+         }
+       } catch (InterruptedException ee) {}
+    }
+
+    void communicating_thread_run()
     {
         Socket socket;	
 		    
@@ -49,7 +78,8 @@ public class ZvieratkoServer implements Runnable {
             ss.bind( address );
             
             SelectionKey key1 = ssc1.register( selector, SelectionKey.OP_ACCEPT );
-            
+            communicating_thread_runs =  true;
+
             while (true)
             {
                 // wait for a new connection or new request
@@ -84,11 +114,12 @@ public class ZvieratkoServer implements Runnable {
 						  continue;
 					  }
 					  rb.flip();
-                      
-					  if (SEE_ANIMAL == rb.get())
-					  {
+                                          try {
+					    if (SEE_ANIMAL == rb.get())
+					    {
 						zvieratko.seeAnimalEvent();
-					  }
+					    }
+                                         } catch (BufferUnderflowException e) {}
                   }                  
                   it.remove();                  
                 }
@@ -98,9 +129,10 @@ public class ZvieratkoServer implements Runnable {
         } catch (IOException e) {
                 e.printStackTrace();
         }
-    }
+        communicating_thread_runs = false;
+   }
 
-    public void emit(byte signal)
+    public synchronized void emit(byte signal)
 	{
 		ArrayList<SocketChannel> toRemove = new ArrayList<>();
 		
@@ -114,7 +146,7 @@ public class ZvieratkoServer implements Runnable {
 					wb.flip();
 					c.write(wb);
 				}
-				else toRemove.add(c);
+                                else toRemove.add(c);
 			}
 		} catch (Exception e) {
 			System.out.println("Warning: Could not talk to remote ESP: " + e);
